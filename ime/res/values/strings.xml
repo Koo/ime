@@ -5,4 +5,5 @@
 <string name="sample_ime_name">SampleIme</string>
 <string name="label_keyboad_setting">キーボード設定</string>
 
+<string name="label_enter_key">ent</string>
 </resources>

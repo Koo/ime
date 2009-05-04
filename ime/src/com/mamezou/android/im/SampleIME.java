@@ -3,22 +3,28 @@ package com.mamezou.android.im;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.graphics.drawable.Drawable;
 import android.inputmethodservice.InputMethodService;
+import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.LinearLayout;
 
 public class SampleIME extends InputMethodService {
 
 	private KeyboardView keyboardView;
-	private MyKeyboard myKeyboard;
+	private MyKeyboard abKeyboard;
+	private MyKeyboard numKeyboard;
+	private MyKeyboard currentKeyboard;
 	private List<String> candidatesList = new ArrayList<String>();
 	private StringBuilder composing = new StringBuilder();
 	private List<String> selection = new ArrayList<String>();
 	private MyCandidateView candidatesView;
+	private int imeOptions;
 
 	public SampleIME() {
 		candidatesList.add("aaa");
@@ -52,7 +58,8 @@ public class SampleIME extends InputMethodService {
 
 	@Override
 	public void onInitializeInterface() {
-		myKeyboard = new MyKeyboard(this, R.xml.mykeyboard);
+		abKeyboard = new MyKeyboard(this, R.xml.mykeyboard);
+		numKeyboard = new MyKeyboard(this, R.xml.numkeyboard);
 	}
 
 	@Override
@@ -60,14 +67,53 @@ public class SampleIME extends InputMethodService {
 		keyboardView = (KeyboardView) getLayoutInflater().inflate(
 				R.layout.keyboard, null);
 
-		keyboardView.setKeyboard(myKeyboard);
 		keyboardView.setOnKeyboardActionListener(listener);
 		return keyboardView;
 	}
 
 	@Override
+	public void onStartInput(EditorInfo attribute, boolean restarting) {
+		super.onStartInput(attribute, restarting);
+	}
+	@Override
 	public void onStartInputView(EditorInfo info, boolean restarting) {
+        // 入力タイプによってキーボードのタイプを変更
+        switch (info.inputType&EditorInfo.TYPE_MASK_CLASS) {
+        case EditorInfo.TYPE_CLASS_NUMBER:
+        	// 数値入力は数字だけのIM
+        	currentKeyboard = numKeyboard;
+        	break;
+        default:
+        	// その他はAとBだけのIM
+        	currentKeyboard = abKeyboard;
+        	break;
+        
+        }
+
+        // 開始時に得た情報からキーボードの見た目を変更
+		imeOptions = info.imeOptions;
+
+		updateCurrentKeyboardView();
+		keyboardView.setKeyboard(currentKeyboard);
 		super.onStartInputView(info, restarting);
+	}
+
+	private void updateCurrentKeyboardView() {
+		Drawable icon = null;
+		String label = null;
+		if ((imeOptions & (EditorInfo.IME_MASK_ACTION|EditorInfo.IME_FLAG_NO_ENTER_ACTION)) == EditorInfo.IME_ACTION_SEARCH) {
+			// 検索の場合は検索アイコン
+			icon = getResources().getDrawable(
+	                R.drawable.sym_keyboard_search);
+		} else {
+			// その他は文字列「ent」
+			label = getResources().getString(R.string.label_enter_key);
+		}
+
+		currentKeyboard.setEnterKeyLooks(icon, label);
+		if (keyboardView != null) {
+			keyboardView.invalidate();
+		}
 	}
 
 	private KeyboardView.OnKeyboardActionListener listener = new KeyboardView.OnKeyboardActionListener() {
@@ -82,6 +128,21 @@ public class SampleIME extends InputMethodService {
 				// 選択肢を非表示
 				setCandidatesViewShown(false);
 				updateInputViewShown();
+			} else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE) {
+				// キーボードを変更
+				if (currentKeyboard == numKeyboard) {
+					currentKeyboard = abKeyboard;
+				} else {
+					currentKeyboard = numKeyboard;
+				}
+				
+				updateCurrentKeyboardView();
+				keyboardView.setKeyboard(currentKeyboard);
+
+			} else if (primaryCode == MyKeyboard.KEYCODE_OPTION) {
+				// オプション画面の代わりにIME選択画面を表示
+				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+				manager.showInputMethodPicker();
 			} else {
 				composing.append((char) primaryCode);
 				getCurrentInputConnection().setComposingText(composing,
