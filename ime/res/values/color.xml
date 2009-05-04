@@ -23,5 +23,5 @@
     
     
 <color name="candidateListBackground">#88000000</color>
-<color name="candidateListForeground">#FFFFFFFF</color>
+<color name="candidateListForeground">#FFFFFF</color>
 </resources>

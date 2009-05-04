@@ -3,19 +3,13 @@ package com.mamezou.android.im;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.graphics.Color;
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.KeyboardView;
-import android.opengl.Visibility;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 
 public class SampleIME extends InputMethodService {
 
@@ -24,8 +18,7 @@ public class SampleIME extends InputMethodService {
 	private List<String> candidatesList = new ArrayList<String>();
 	private StringBuilder composing = new StringBuilder();
 	private List<String> selection = new ArrayList<String>();
-	private ArrayAdapter<String> adapter;
-	private ListView candidatesView;
+	private MyCandidateView candidatesView;
 
 	public SampleIME() {
 		candidatesList.add("aaa");
@@ -88,7 +81,6 @@ public class SampleIME extends InputMethodService {
 				composing.delete(0, composing.length());
 				// 選択肢を非表示
 				setCandidatesViewShown(false);
-				updateCandidate();
 				updateInputViewShown();
 			} else {
 				composing.append((char) primaryCode);
@@ -137,34 +129,6 @@ public class SampleIME extends InputMethodService {
 
 	};
 
-	private AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
-		public void onItemClick(AdapterView<?> parent, View text, int position,
-				long id) {
-			String selected = selection.get(position);
-			getCurrentInputConnection().commitText(selected, selected.length());
-			composing.delete(0, composing.length());
-			// 選択肢を非表示
-			setCandidatesViewShown(false);
-		}
-	};
-
-	private AdapterView.OnItemSelectedListener itemSelectedListener = new AdapterView.OnItemSelectedListener() {
-		public void onItemSelected(AdapterView<?> view, View text,
-				int position, long id) {
-
-			String selected = selection.get(position);
-			getCurrentInputConnection().commitText(selected, selected.length());
-			composing.delete(0, composing.length());
-			// 選択肢を非表示
-			setCandidatesViewShown(false);
-		}
-
-		public void onNothingSelected(AdapterView<?> arg0) {
-
-		}
-
-	};
-
 	public void updateCandidate() {
 		String start = composing.toString();
 		selection.clear();
@@ -173,46 +137,30 @@ public class SampleIME extends InputMethodService {
 				selection.add(candidate);
 			}
 		}
-		adapter.notifyDataSetChanged();
-		candidatesView.invalidate();
+		candidatesView.setCandidates(selection);
 	}
 
 	@Override
 	public View onCreateCandidatesView() {
 		LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(
 				R.layout.candidates, null);
-		candidatesView = (ListView) layout
+		candidatesView = (MyCandidateView) layout
 				.findViewById(R.id.candidatesListView);
-		adapter = new ArrayAdapter<String>(getApplicationContext(),
-				R.layout.input, selection);
-		candidatesView.setAdapter(adapter);
-//		candidatesView.setOnItemClickListener(itemClickListener);
-		candidatesView.setOnItemSelectedListener(itemSelectedListener);
+		candidatesView.setSampleIME(this);
 		return layout;
 	}
 
-//	 private Button b;
-//	
-//	 @Override
-//	 public View onCreateCandidatesView() {
-//	 b = new Button(getApplicationContext());
-//	 b.setClickable(true);
-//	 b.setText("test");
-//	 b.setOnClickListener(new Button.OnClickListener() {
-//	
-//	 public void onClick(View v) {
-//	 Log.d("SampleIME", v.toString());
-//	 }
-//	
-//	 });
-//	 b.setVisibility(View.VISIBLE);
-//	 return b;
-//	 }
 
 	@Override
 	public void onStartCandidatesView(EditorInfo info, boolean restarting) {
 		super.onStartCandidatesView(info, restarting);
 		Log.d("SampleIME", "call onStartCandidatesView(" + info.toString()
 				+ ", " + restarting + ")");
+	}
+
+	public void onCandidateSelect(String str) {
+		getCurrentInputConnection().commitText(str, str.length());
+		composing.delete(0, composing.length());
+		setCandidatesViewShown(false);
 	}
 }
