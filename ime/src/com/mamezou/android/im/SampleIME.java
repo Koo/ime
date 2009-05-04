@@ -8,6 +8,7 @@ import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -144,13 +145,7 @@ public class SampleIME extends InputMethodService {
 				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 				manager.showInputMethodPicker();
 			} else {
-				composing.append((char) primaryCode);
-				getCurrentInputConnection().setComposingText(composing,
-						composing.length());
-				// 選択肢を表示
-				setCandidatesViewShown(true);
-				updateCandidate();
-				updateInputViewShown();
+				appendToComposing(primaryCode);
 			}
 		}
 
@@ -223,5 +218,33 @@ public class SampleIME extends InputMethodService {
 		getCurrentInputConnection().commitText(str, str.length());
 		composing.delete(0, composing.length());
 		setCandidatesViewShown(false);
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		int unicode = event.getUnicodeChar();
+		if (('a' <= unicode && unicode <= 'z' ) 
+				|| ('A' <= unicode && unicode <= 'Z' )
+				|| ('0' <= unicode && unicode <= '9' )) {
+			// 文字入力はこっちで処理
+			appendToComposing(unicode);
+			// 確定まではEditTextにはハンドルさせない
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		return super.onKeyUp(keyCode, event);
+	}
+	private void appendToComposing(int primaryCode) {
+		composing.append((char) primaryCode);
+		getCurrentInputConnection().setComposingText(composing,
+				composing.length());
+		// 選択肢を表示
+		setCandidatesViewShown(true);
+		updateCandidate();
+		updateInputViewShown();
 	}
 }
