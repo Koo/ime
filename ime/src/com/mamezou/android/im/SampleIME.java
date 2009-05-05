@@ -1,6 +1,7 @@
 package com.mamezou.android.im;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import android.content.SharedPreferences;
@@ -15,29 +16,17 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.LinearLayout;
 
 public class SampleIME extends InputMethodService {
-
 	private KeyboardView keyboardView;
 	private MyKeyboard abKeyboard;
 	private MyKeyboard numKeyboard;
 	private MyKeyboard currentKeyboard;
 	private MyKeyboard qwertyKeyboard;
-	private List<String> candidatesList = new ArrayList<String>();
 	private StringBuilder composing = new StringBuilder();
-	private List<String> selection = new ArrayList<String>();
 	private MyCandidateView candidatesView;
 	private int imeOptions;
 
-	public SampleIME() {
-		candidatesList.add("aaa");
-		candidatesList.add("aab");
-		candidatesList.add("abb");
-		candidatesList.add("bbb");
-		candidatesList.add("bba");
-		candidatesList.add("baa");
-	}
 
 	@Override
 	public boolean onEvaluateInputViewShown() {
@@ -64,8 +53,6 @@ public class SampleIME extends InputMethodService {
 	private KeyboardView.OnKeyboardActionListener listener = new KeyboardView.OnKeyboardActionListener() {
 
 		public void onKey(int primaryCode, int[] keyCodes) {
-			StringBuffer sb = new StringBuffer();
-			sb.append((char) primaryCode);
 			if (primaryCode == -1) {
 				getCurrentInputConnection().commitText(composing,
 						composing.length());
@@ -185,25 +172,39 @@ public class SampleIME extends InputMethodService {
 		}
 	}
 
+	private static final List<String> CANDIDATES_LIST;
+
+	static {
+		List<String> l = new ArrayList<String>();
+		l.add("aaa");
+		l.add("aab");
+		l.add("abb");
+		l.add("bbb");
+		l.add("bba");
+		l.add("baa");
+		
+		CANDIDATES_LIST = Collections.unmodifiableList(l);
+	}
+	private List<String> selection = new ArrayList<String>();
+
 	private void updateCandidate() {
 		String start = composing.toString();
 		selection.clear();
-		for (String candidate : candidatesList) {
+		for (String candidate : CANDIDATES_LIST) {
 			if (candidate.startsWith(start)) {
 				selection.add(candidate);
 			}
 		}
+		// CandidatesViewの選択肢を更新
 		candidatesView.setCandidates(selection);
 	}
 
 	@Override
 	public View onCreateCandidatesView() {
-		LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(
+		candidatesView = (MyCandidateView) getLayoutInflater().inflate(
 				R.layout.candidates, null);
-		candidatesView = (MyCandidateView) layout
-				.findViewById(R.id.candidatesListView);
 		candidatesView.setSampleIME(this);
-		return layout;
+		return candidatesView;
 	}
 
 	public void onCandidateSelect(String str) {
@@ -214,18 +215,18 @@ public class SampleIME extends InputMethodService {
 
 	private void appendToComposing(int primaryCode) {
 		composing.append((char) primaryCode);
-		getCurrentInputConnection().setComposingText(composing,
-				composing.length());
+		InputConnection ic = getCurrentInputConnection();
+		ic.setComposingText(composing, composing.length());
 
 		// 設定から候補表示を行うかどうかを取得
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 		boolean showSugestion = sp.getBoolean("show_suggestions", true);
 
 		if (showSugestion) {
-			// 選択肢を表示
+			// CandidatesViewを表示
 			setCandidatesViewShown(true);
+			// 選択肢の更新
 			updateCandidate();
-			updateInputViewShown();
 		}
 	}
 
@@ -235,7 +236,7 @@ public class SampleIME extends InputMethodService {
 		int unicode = event.getUnicodeChar();
 		if (('a' <= unicode && unicode <= 'z' ) 
 				|| ('A' <= unicode && unicode <= 'Z' )
-				|| ('0' <= unicode && unicode <= '9' )) {
+				|| ('0' <= unicode && unicode <= '9')) {
 			// 文字入力はこっちで処理
 			appendToComposing(unicode);
 			// 確定まではEditTextにはハンドルさせない
