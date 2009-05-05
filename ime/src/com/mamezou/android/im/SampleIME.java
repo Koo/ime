@@ -23,6 +23,7 @@ public class SampleIME extends InputMethodService {
 	private MyKeyboard abKeyboard;
 	private MyKeyboard numKeyboard;
 	private MyKeyboard currentKeyboard;
+	private MyKeyboard qwertyKeyboard;
 	private List<String> candidatesList = new ArrayList<String>();
 	private StringBuilder composing = new StringBuilder();
 	private List<String> selection = new ArrayList<String>();
@@ -36,12 +37,6 @@ public class SampleIME extends InputMethodService {
 		candidatesList.add("bbb");
 		candidatesList.add("bba");
 		candidatesList.add("baa");
-
-	}
-
-	@Override
-	public AbstractInputMethodImpl onCreateInputMethodInterface() {
-		return super.onCreateInputMethodInterface();
 	}
 
 	@Override
@@ -61,62 +56,9 @@ public class SampleIME extends InputMethodService {
 
 	@Override
 	public void onInitializeInterface() {
-		abKeyboard = new MyKeyboard(this, R.xml.mykeyboard);
+		abKeyboard = new MyKeyboard(this, R.xml.abkeyboard);
 		numKeyboard = new MyKeyboard(this, R.xml.numkeyboard);
-	}
-
-	@Override
-	public View onCreateInputView() {
-		keyboardView = (KeyboardView) getLayoutInflater().inflate(
-				R.layout.keyboard, null);
-
-		keyboardView.setOnKeyboardActionListener(listener);
-		return keyboardView;
-	}
-
-	@Override
-	public void onStartInput(EditorInfo attribute, boolean restarting) {
-		super.onStartInput(attribute, restarting);
-	}
-	@Override
-	public void onStartInputView(EditorInfo info, boolean restarting) {
-        // 入力タイプによってキーボードのタイプを変更
-        switch (info.inputType&EditorInfo.TYPE_MASK_CLASS) {
-        case EditorInfo.TYPE_CLASS_NUMBER:
-        	// 数値入力は数字だけのIM
-        	currentKeyboard = numKeyboard;
-        	break;
-        default:
-        	// その他はAとBだけのIM
-        	currentKeyboard = abKeyboard;
-        	break;
-        
-        }
-
-        // 開始時に得た情報からキーボードの見た目を変更
-		imeOptions = info.imeOptions;
-
-		updateCurrentKeyboardView();
-		keyboardView.setKeyboard(currentKeyboard);
-		super.onStartInputView(info, restarting);
-	}
-
-	private void updateCurrentKeyboardView() {
-		Drawable icon = null;
-		String label = null;
-		if ((imeOptions & (EditorInfo.IME_MASK_ACTION|EditorInfo.IME_FLAG_NO_ENTER_ACTION)) == EditorInfo.IME_ACTION_SEARCH) {
-			// 検索の場合は検索アイコン
-			icon = getResources().getDrawable(
-	                R.drawable.sym_keyboard_search);
-		} else {
-			// その他は文字列「ent」
-			label = getResources().getString(R.string.label_enter_key);
-		}
-
-		currentKeyboard.setEnterKeyLooks(icon, label);
-		if (keyboardView != null) {
-			keyboardView.invalidate();
-		}
+		qwertyKeyboard = new MyKeyboard(this, R.xml.qwertykeyboard);
 	}
 
 	private KeyboardView.OnKeyboardActionListener listener = new KeyboardView.OnKeyboardActionListener() {
@@ -135,6 +77,8 @@ public class SampleIME extends InputMethodService {
 				// キーボードを変更
 				if (currentKeyboard == numKeyboard) {
 					currentKeyboard = abKeyboard;
+				} else if (currentKeyboard == abKeyboard) {
+					currentKeyboard = qwertyKeyboard;
 				} else {
 					currentKeyboard = numKeyboard;
 				}
@@ -147,10 +91,10 @@ public class SampleIME extends InputMethodService {
 				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 				manager.showInputMethodPicker();
 			} else if (primaryCode == '\n') {
-		        getCurrentInputConnection().sendKeyEvent(
-		                new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
-		        getCurrentInputConnection().sendKeyEvent(
-		                new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER));
+				getCurrentInputConnection().commitText(composing,
+						composing.length());
+				composing.delete(0, composing.length());
+				sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER);
 			} else {
 				appendToComposing(primaryCode);
 			}
@@ -192,7 +136,56 @@ public class SampleIME extends InputMethodService {
 
 	};
 
-	public void updateCandidate() {
+	@Override
+	public View onCreateInputView() {
+		keyboardView = (KeyboardView) getLayoutInflater().inflate(
+				R.layout.keyboard, null);
+
+		keyboardView.setOnKeyboardActionListener(listener);
+		return keyboardView;
+	}
+
+	@Override
+	public void onStartInputView(EditorInfo info, boolean restarting) {
+        // 入力タイプによってキーボードのタイプを変更
+        switch (info.inputType&EditorInfo.TYPE_MASK_CLASS) {
+        case EditorInfo.TYPE_CLASS_NUMBER:
+        	// 数値入力は数字だけのIM
+        	currentKeyboard = numKeyboard;
+        	break;
+        default:
+        	// その他はAとBだけのIM
+        	currentKeyboard = abKeyboard;
+        	break;
+        
+        }
+
+        // 開始時に得た情報からキーボードの見た目を変更
+		imeOptions = info.imeOptions;
+
+		updateCurrentKeyboardView();
+		keyboardView.setKeyboard(currentKeyboard);
+	}
+
+	private void updateCurrentKeyboardView() {
+		Drawable icon = null;
+		String label = null;
+		if ((imeOptions & (EditorInfo.IME_MASK_ACTION|EditorInfo.IME_FLAG_NO_ENTER_ACTION)) == EditorInfo.IME_ACTION_SEARCH) {
+			// 検索の場合は検索アイコン
+			icon = getResources().getDrawable(
+	                R.drawable.sym_keyboard_search);
+		} else {
+			// その他は文字列「ent」
+			label = getResources().getString(R.string.label_enter_key);
+		}
+
+		currentKeyboard.setEnterKeyLooks(icon, label);
+		if (keyboardView != null) {
+			keyboardView.invalidate();
+		}
+	}
+
+	private void updateCandidate() {
 		String start = composing.toString();
 		selection.clear();
 		for (String candidate : candidatesList) {
@@ -213,32 +206,10 @@ public class SampleIME extends InputMethodService {
 		return layout;
 	}
 
-
-	@Override
-	public void onStartCandidatesView(EditorInfo info, boolean restarting) {
-		super.onStartCandidatesView(info, restarting);
-		Log.d("SampleIME", "call onStartCandidatesView(" + info.toString()
-				+ ", " + restarting + ")");
-	}
-
 	public void onCandidateSelect(String str) {
 		getCurrentInputConnection().commitText(str, str.length());
 		composing.delete(0, composing.length());
 		setCandidatesViewShown(false);
-	}
-
-	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		int unicode = event.getUnicodeChar();
-		if (('a' <= unicode && unicode <= 'z' ) 
-				|| ('A' <= unicode && unicode <= 'Z' )
-				|| ('0' <= unicode && unicode <= '9' )) {
-			// 文字入力はこっちで処理
-			appendToComposing(unicode);
-			// 確定まではEditTextにはハンドルさせない
-			return true;
-		}
-		return super.onKeyDown(keyCode, event);
 	}
 
 	private void appendToComposing(int primaryCode) {
@@ -256,5 +227,20 @@ public class SampleIME extends InputMethodService {
 			updateCandidate();
 			updateInputViewShown();
 		}
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// ハードウェアキーボードの処理
+		int unicode = event.getUnicodeChar();
+		if (('a' <= unicode && unicode <= 'z' ) 
+				|| ('A' <= unicode && unicode <= 'Z' )
+				|| ('0' <= unicode && unicode <= '9' )) {
+			// 文字入力はこっちで処理
+			appendToComposing(unicode);
+			// 確定まではEditTextにはハンドルさせない
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
 	}
 }

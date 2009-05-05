@@ -28,6 +28,10 @@ public class MyCandidateView extends View {
 	 */
 	private static final int X_GAP = 10;
 
+	public void setSampleIME(SampleIME sampleIME) {
+		this.sampleIME = sampleIME;
+	}
+
 	public MyCandidateView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		candidates = new ArrayList<String>();
@@ -75,10 +79,6 @@ public class MyCandidateView extends View {
 			}
 			x += wordWidth;
 		}
-	}
-
-	public void setSampleIME(SampleIME sampleIME) {
-		this.sampleIME = sampleIME;
 	}
 	@Override
 	public boolean onTouchEvent(MotionEvent me) {

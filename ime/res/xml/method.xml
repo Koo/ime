@@ -2,7 +2,7 @@
 	android:settingsActivity="com.mamezou.android.im.SampleIMESetting"
 />
 
-<!-- 設定画面なしの場合は、settingActivityを指定しなければよい -->
+<!-- 設定画面なしの場合は、settingActivityを指定しない -->
 <!-- 
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"/>
  -->
