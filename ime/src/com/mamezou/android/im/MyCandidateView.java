@@ -119,13 +119,11 @@ public class MyCandidateView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int measuredWidth = resolveSize(50, widthMeasureSpec);
         
-        // Get the desired height of the icon menu view (last row of items does
-        // not have a divider below)
+        // Viewのサイズを計算
         Rect padding = new Rect();
         final int desiredHeight = ((int)paint.getTextSize()) + 2
                 + padding.top + padding.bottom;
         
-        // Maximum possible width and desired height
         setMeasuredDimension(measuredWidth,
                 resolveSize(desiredHeight, heightMeasureSpec));
     }
