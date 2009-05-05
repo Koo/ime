@@ -3,10 +3,12 @@ package com.mamezou.android.im;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -144,6 +146,11 @@ public class SampleIME extends InputMethodService {
 				// オプション画面の代わりにIME選択画面を表示
 				InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 				manager.showInputMethodPicker();
+			} else if (primaryCode == '\n') {
+		        getCurrentInputConnection().sendKeyEvent(
+		                new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
+		        getCurrentInputConnection().sendKeyEvent(
+		                new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER));
 			} else {
 				appendToComposing(primaryCode);
 			}
@@ -234,17 +241,20 @@ public class SampleIME extends InputMethodService {
 		return super.onKeyDown(keyCode, event);
 	}
 
-	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		return super.onKeyUp(keyCode, event);
-	}
 	private void appendToComposing(int primaryCode) {
 		composing.append((char) primaryCode);
 		getCurrentInputConnection().setComposingText(composing,
 				composing.length());
-		// 選択肢を表示
-		setCandidatesViewShown(true);
-		updateCandidate();
-		updateInputViewShown();
+
+		// 設定から候補表示を行うかどうかを取得
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean showSugestion = sp.getBoolean("show_suggestions", true);
+
+		if (showSugestion) {
+			// 選択肢を表示
+			setCandidatesViewShown(true);
+			updateCandidate();
+			updateInputViewShown();
+		}
 	}
 }
