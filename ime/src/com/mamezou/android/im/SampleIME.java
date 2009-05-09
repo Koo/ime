@@ -53,13 +53,12 @@ public class SampleIME extends InputMethodService {
 	private KeyboardView.OnKeyboardActionListener listener = new KeyboardView.OnKeyboardActionListener() {
 
 		public void onKey(int primaryCode, int[] keyCodes) {
-			if (primaryCode == -1) {
+			if (primaryCode == -100) {
 				getCurrentInputConnection().commitText(composing,
 						composing.length());
 				composing.delete(0, composing.length());
 				// 選択肢を非表示
 				setCandidatesViewShown(false);
-				updateInputViewShown();
 			} else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE) {
 				// キーボードを変更
 				if (currentKeyboard == numKeyboard) {
