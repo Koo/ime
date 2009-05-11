@@ -21,12 +21,12 @@ public class SampleIME extends InputMethodService {
 	private KeyboardView keyboardView;
 	private MyKeyboard abKeyboard;
 	private MyKeyboard numKeyboard;
-	private MyKeyboard currentKeyboard;
 	private MyKeyboard qwertyKeyboard;
 	private StringBuilder composing = new StringBuilder();
 	private MyCandidateView candidatesView;
 	private int imeOptions;
 
+	private MyKeyboard currentKeyboard;
 
 	@Override
 	public boolean onEvaluateInputViewShown() {
@@ -148,18 +148,17 @@ public class SampleIME extends InputMethodService {
 
         // 開始時に得た情報からキーボードの見た目を変更
 		imeOptions = info.imeOptions;
-
 		updateCurrentKeyboardView();
+
 		keyboardView.setKeyboard(currentKeyboard);
 	}
 
 	private void updateCurrentKeyboardView() {
 		Drawable icon = null;
 		String label = null;
-		if ((imeOptions & (EditorInfo.IME_MASK_ACTION|EditorInfo.IME_FLAG_NO_ENTER_ACTION)) == EditorInfo.IME_ACTION_SEARCH) {
+		if ((imeOptions & EditorInfo.IME_MASK_ACTION) == EditorInfo.IME_ACTION_SEARCH) {
 			// 検索の場合は検索アイコン
-			icon = getResources().getDrawable(
-	                R.drawable.sym_keyboard_search);
+			icon = getResources().getDrawable(R.drawable.sym_keyboard_search);
 		} else {
 			// その他は文字列「ent」
 			label = getResources().getString(R.string.label_enter_key);
