@@ -229,6 +229,13 @@ public class SampleIME extends InputMethodService {
 	}
 
 	@Override
+	public void onFinishInput() {
+		super.onFinishInput();
+		composing.delete(0, composing.length());
+		setCandidatesViewShown(false);
+	}
+
+	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		// ハードウェアキーボードの処理
 		int unicode = event.getUnicodeChar();
