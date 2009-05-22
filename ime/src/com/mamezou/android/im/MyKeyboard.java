@@ -10,7 +10,7 @@ public class MyKeyboard extends Keyboard {
 	/**
 	 * IME変更のキーコード
 	 */
-	public static final int KEYCODE_OPTION = -100;
+	public static final int KEYCODE_OPTION = -200;
 
 	private Key enterKey;
 
